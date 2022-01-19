@@ -1,0 +1,53 @@
+<tr>
+  <td colspan="3"><input type="text" id="answer" disabled></input></td>
+  <td><button onclick="makeWord()" class="buttonng"> New Game </button></td>
+  <td rowspan="5"><img src="Photos/Stage 1.png" id="photo" width=35%></td>
+</tr>
+<tr>
+  <td><button onclick="guessLet('a')">a</button></td>
+  <td><button onclick="guessLet('b')">b</button></td>
+  <td><button onclick="guessLet('c')">c</button></td>
+  <td><button onclick="guessLet('d')">d</button></td>
+</tr>
+<tr>
+  <td><button onclick="guessLet('e')">e</button></td>
+  <td><button onclick="guessLet('f')">f</button></td>
+  <td><button onclick="guessLet('g')">g</button></td>
+  <td><button onclick="guessLet('h')">h</button></td>
+</tr>
+<tr>
+  <td><button onclick="guessLet('i')">i</button></td>
+  <td><button onclick="guessLet('j')">j</button></td>
+  <td><button onclick="guessLet('k')">k</button></td>
+  <td><button onclick="guessLet('l')">l</button></td>
+</tr>
+<tr>
+  <td><button onclick="guessLet('m')">m</button></td>
+  <td><button onclick="guessLet('n')">n</button></td>
+  <td><button onclick="guessLet('o')">o</button></td>
+  <td><button onclick="guessLet('p')">p</button></td>
+</tr>
+<tr>
+  <td><button onclick="guessLet('q')">q</button></td>
+  <td><button onclick="guessLet('r')">r</button></td>
+  <td><button onclick="guessLet('s')">s</button></td>
+  <td><button onclick="guessLet('t')">t</button></td>
+  <td><p id="defcon" align="center">DEFCON 1</p></td>
+</tr>
+<tr>
+  <td><button onclick="guessLet('u')">u</button></td>
+  <td><button onclick="guessLet('v')">v</button></td>
+  <td><button onclick="guessLet('w')">w</button></td>
+  <td><button onclick="guessLet('x')">x</button></td>
+  <td><p id="gesd" align="center"></p></td>
+</tr>
+<tr>
+  <td colspan="2"><button onclick="guessLet('y')" class="buttonyz">y</button></td>
+  <td colspan="2"><button onclick="guessLet('z')" class="buttonyz">z</button></td>
+  <!-- This displays the points system. When it get's to 0, there should be a notification that says that the world has ended -->
+  <td><p align="center">Minutes to Midnight</p></td>
+</tr>
+<tr>
+  <td colspan="4" align="center"><button onclick="newGame()" class="buttonnew">Reset Game/Score</button></td>
+  <td><p id="mins" align="center">2</p></td>
+</tr>

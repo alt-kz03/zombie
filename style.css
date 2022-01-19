@@ -1,0 +1,11 @@
+      @font-face{src: url(PressStart2P.ttf); font-family: 'minecraft';}
+      #menu{transition: 0.15s; height: 720px;}
+      #table{background-color: rgba(255,157,0,1.00); height: 720px; width: 960px; border-width: 0; transition: 1s;}
+      #ename{height: 720px; width: 960px; border-width: 0; transition: 1s;}
+      body{color: white; font-family: 'minecraft';}
+      button{border-color: white; font-family: 'minecraft'; color: darkgrey; border-radius: 2px; height: 50px; width: 100px; transition: 0.1s;}
+      button:hover{color: white; background-color: darkgrey; width: 110px; height: 55px; transition: 0.1s;}
+      img{transition: 0.15s;}
+      #text{transition: 0.15s;}
+      #oddbutton{width: 300px;}
+      input{font-family: 'minecraft'; border-radius: 2px; border-width: 0; color: grey; height: 50px;}

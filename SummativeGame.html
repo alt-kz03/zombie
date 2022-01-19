@@ -1,0 +1,559 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link href="https://fonts.googleapis.com/css?family=Kanit:500&display=swap" rel="stylesheet">
+<title>Rooftop Combat</title>
+<style>
+canvas {
+	outline: black 3px solid;
+}
+</style>
+</head>
+
+<!--Game is not completed - some canvas elements are missing (like hp bar), missing html and css, addtional pages, and general balancing will all be done before we meet the kids-->
+
+<body onload="startGame()">
+<script>
+
+//Creates all the sprites
+var backgroundimg = new Image();
+backgroundimg.src = "images/backgroundsky2.png"
+var heartimg = new Image();
+heartimg.src = "images/heart.png";
+var pirateimg = new Image();
+pirateimg.src = "images/CaptainPirate.png"
+var pirateimgflip = new Image();
+pirateimgflip.src = "images/CaptainPirateflip.png"
+var pistolimg = new Image();
+pistolimg.src = "images/pistol.png";
+var pistolimgflip = new Image();
+pistolimgflip.src = "images/pistolflip.png";
+var minigunimg = new Image();
+minigunimg.src = "images/minigun.png";
+var minigunimgflip = new Image();
+minigunimgflip.src = "images/minigunflip.png";
+var shotgunimg = new Image();
+shotgunimg.src = "images/shotgun.png";
+var shotgunimgflip = new Image();
+shotgunimgflip.src = "images/shotgunflip.png";
+var sniperimg = new Image();
+sniperimg.src = "images/sniper.png";
+var sniperimgflip = new Image();
+sniperimgflip.src = "sniperflip.png";
+var rpgimg = new Image();
+rpgimg.src = "images/rpg.png";
+var rpgimgflip = new Image();
+rpgimgflip.src = "images/rpgflip.png";
+var zombieimg = new Image();
+zombieimg.src = "images/zombie.png"
+var zombieimgflip = new Image();
+zombieimgflip.src = "images/zombieflip.png"
+
+//Variables initialized
+var player, direction, cooldown, bullet, bullets, guns, gunx, guny, gundelay, pistol, minigun, shotgun, sniper, rpg, mobs;
+var points = 0;
+var i = 0;
+var j = 0;
+var k = 0;
+var l = 0;
+var a = 0;
+var delay = 0;
+var switchdelay = 0;
+var dmgcooldown = 0;
+direction = 1;
+
+//Prevents space from scrolling - On some pcs the canvas is too large
+window.onkeydown = function(e) {
+    return !(e.keyCode == 32);
+};
+
+//Starts game on onload, creates all the objects and arrays needed for entities and values
+function startGame() {
+	myGameArea.start();
+	player = new componentPlayer(60, 150, 200, 200, 0, 0, 1000, "rgba(0,0,0,0)", pirateimg);
+	bullets = [];
+	mobs = [];
+	pistol = new componentGun(40, 30, 0, 0, pistolimg, pistolimgflip);
+	minigun = new componentGun(111, 30, 0, 0, minigunimg, minigunimgflip);
+	shotgun = new componentGun(110, 30, 0, 0, shotgunimg, shotgunimgflip);
+	sniper = new componentGun(144, 44, 0, 0, sniperimg, sniperimgflip);
+	rpg = new componentGun(128, 40, 0, 0, rpgimg, rpgimgflip)
+	guns = [pistol];
+	gunx = [20, -20, -20, -20, -30];
+	guny = [0, 10, 10, -15, -20];
+	gundelay = [1, 1, 1, 1, 1];
+}
+
+//Object that creates canvas, starts the frame interval, has the key down or up detection, the clear and stop function
+var myGameArea = {
+	canvas : document.createElement("canvas"),
+	start : function() {
+		this.canvas.width = 960;
+		this.canvas.height = 720;
+		this.context = this.canvas.getContext("2d");
+		document.getElementById("cv").insertBefore(this.canvas, document.getElementById("cv").childNodes[0]);
+		this.interval = setInterval(updateGameArea, 10);
+		window.addEventListener('keydown', function (e) {
+			myGameArea.keys = (myGameArea.keys || []);
+			myGameArea.keys[e.keyCode] = true;
+		})
+		window.addEventListener('keyup', function (e) {
+			myGameArea.keys[e.keyCode] = false;
+		})
+	},
+	clear : function() {
+		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	},
+	stop : function() {
+		clearInterval(this.interval);
+	}
+}
+
+//Player constructor - is affected by gravity and acceleration, jump cooldown, damage and lose function
+function componentPlayer(width, height, x, y, dx, dy, hp, colour, img) {
+	this.width = width;
+	this.height = height;
+	this.x = x;
+	this.y = y;
+	this.dx = dx;
+	this.dy = dy;
+	this.hp = hp;
+	this.img = img;
+	this.colour = colour;
+	this.newPos = function() {
+		if(this.x + this.dx < 0) {
+			this.x = 0;
+		} else if(this.x + this.width + this.dx > 960) {
+			this.x = 960 - this.width;
+		} else {
+			this.x += this.dx;
+		}
+		if(this.y + this.height + this.dy >= 420) {
+			this.y = 420 - this.height;
+			cooldown = false;
+		} else {
+			this.y += this.dy;
+		}
+	}
+	this.update = function() {
+		ctx = myGameArea.context;
+		ctx.fillStyle = colour;
+		ctx.fillRect(this.x, this.y, this.width, this.height);
+		if(this.img) {
+			drawSprite(this.img, this.x, this.y, this.width, this.height);
+		}
+	}
+	this.damage = function() {
+		for(l = 0; l < mobs.length; l++) {
+			if(this.x < mobs[l].x + mobs[l].width && this.x + this.width > mobs[l].x && this.y < mobs[l].y + mobs[l].height && this.y + this.height > mobs[l].y && dmgcooldown > 200) {
+				dmgcooldown = 0;
+				this.hp += - mobs[l].oldhp;
+				this.dy = -3;
+				if(this.x + this.width/2 > mobs[l].x + mobs[l].width/2) {
+					this.dx = 6;
+				} else {
+					this.dx = -6;
+				}
+			}
+		}
+	}
+	this.lose = function() {
+		if(this.hp <= 0) {
+			this.hp = 0;
+			myGameArea.stop();
+			alert("You Dies. Your score was " + points)
+			window.location.href = "index.html"
+		}
+	}
+}
+
+//Enemy constructor - bullet collision detection and will delete itself from array upon dying
+function componentMob(width, height, x, y, dx, dy, colour, hp, point, img) {
+	this.width = width;
+	this.height = height;
+	this.x = x;
+	this.y = y;
+	this.dx = dx;
+	this.dy = dy;
+	this.hp = hp;
+	this.oldhp = hp;
+	this.point = point;
+	this.img = img;
+	this.colour = colour;
+	this.newPos = function() {
+		if(this.x + this.width/2 > player.x + player.width/2) {
+			this.x += - this.dx;
+			this.img = zombieimgflip;
+		} else {
+			this.x += this.dx;
+			this.img = zombieimg;
+		}
+		if(this.y + this.height + this.dy >= 420) {
+			this.y = 420 - this.height;
+		} else {
+			this.y += this.dy;
+		}
+	}
+	this.update = function() {
+		ctx = myGameArea.context;
+		ctx.fillStyle = colour;
+		ctx.fillRect(this.x, this.y, this.width, this.height);
+		if(this.img) {
+			drawSprite(this.img, this.x, this.y, this.width, this.height);
+		}
+		ctx.fillStyle = "red";
+		ctx.fillRect(this.x + this.width/2 - 25, this.y - 20, 50, 10);
+		ctx.fillStyle = "#39FF14"
+		ctx.fillRect(this.x + this.width/2 - 23, this.y - 18, this.hp/this.oldhp * 46, 6);
+	}
+	this.del = function(index) {
+		if(this.hp <= 0) {
+			mobs.splice(index, 1);
+			j--;
+			points += this.point;
+		}
+	}
+	this.hit = function() {
+		for(k = 0; k < bullets.length; k++) {
+			if(bullets[k].hp >= 0 && this.hp > 0) {
+				if(this.x < bullets[k].x + bullets[k].width && this.x + this.width > bullets[k].x && this.y < bullets[k].y + bullets[k].height && this.y + this.height > bullets[k].y) {
+					this.hp += - bullets[k].hp;
+					bullets[k].hp += - this.oldhp;
+				}
+			}
+		}
+	}
+}
+
+//Gun constructor - which sprite and where to place the gun in respect to the player
+function componentGun(width, height, x, y, img, imgflip) {
+	this.width = width;
+	this.height = height;
+	this.x = x;
+	this.y = y;
+	this.img = img;
+	this.imgflip = imgflip
+	this.newPos = function() {
+		this.x = player.x + player.width/2 + gunx[a] * direction;
+		this.y = player.y + player.height/2 + guny[a];
+	}
+	this.update = function() {
+		ctx = myGameArea.context;
+		if(direction == 1) {
+			drawSprite(img, this.x, this.y, this.width, this.height);
+		} else if(direction == -1) {
+			drawSprite(imgflip, this.x - this.width, this.y, this.width, this.height);
+		}
+	}
+}
+
+//Bullet constructor - Direction and velocity of different bullets, has delete function to remove itself once its "hp" hits 0, either from hitting enemy or going off screen
+function componentBullet(width, height, x, y, dx, dy, hp, colour) {
+	this.width = width;
+	this.height = height;
+	this.x = x;
+	this.y = y;
+	this.dx = dx;
+	this.dy = dy;
+	this.hp = hp;
+	this.newPos = function() {
+		this.x += this.dx;
+		this.y += this.dy;
+	}
+	this.update = function() {
+		ctx = myGameArea.context;
+		ctx.fillStyle = "red";
+		ctx.fillRect(this.x, this.y, this.width, this.height);
+		ctx.fillStyle = colour;
+		ctx.fillRect(this.x+1, this.y+1, this.width-2, this.height-2);
+	}
+	this.del = function(index) {
+		if(this.hp <= 0) {
+			bullets.splice(index, 1);
+			i--;
+		}
+	}
+}
+
+//A function to draw sprites
+function drawSprite(img, x, y, width, height) {
+	ctx = myGameArea.context;
+	ctx.drawImage(img, x, y, width, height);
+}
+
+//A function to write text
+function drawText(text, font, colour, textx, texty) {
+	ctx = myGameArea.context;
+	ctx.font = font;
+	ctx.fillStyle = colour;
+	ctx.fillText(text, textx, texty);
+}
+
+//The interval update function, set to every hundredth of a second - more comments inside
+function updateGameArea() {
+	//clears board
+	myGameArea.clear();
+	//all the delay and cooldown counters
+	delay++;
+	switchdelay++;
+	dmgcooldown++;
+	//background
+	drawSprite(backgroundimg, 0, -480, 960, 1200);
+	//Deacceleration when no button is pressed - looks weird b/c problem with jittering
+	if(player.dx > 0) {
+		player.dx = Math.round((player.dx - 0.1)*10)/10;
+	} else if(player.dx < 0) {
+		player.dx = Math.round((player.dx + 0.1)*10)/10;
+	}
+	//gravity - stops at floor
+	if (player.y + player.height < 420) {
+		player.dy = Math.round(10 * (player.dy + 0.1)) / 10;
+	} else {
+		player.dy = 0;
+	}
+	//a to go left
+	if(myGameArea.keys && myGameArea.keys[65]) {
+		player.dx += -1/5;
+		direction = -1;
+	}
+	//d to go right
+	if(myGameArea.keys && myGameArea.keys[68]) {
+		player.dx += 1/5;
+		direction = 1;
+	}
+	if(dmgcooldown < 200 && Math.round(dmgcooldown/20)%2 == 0) {
+		player.img = null;
+	} else if(direction == 1) {
+		player.img = pirateimg;
+	} else {
+		player.img = pirateimgflip;
+	}
+	//terminal velocity
+	if(player.dx > 5) {
+		player.dx = 5;
+	}
+	if(player.dx < -5) {
+		player.dx = -5;
+	}
+	//w to jump
+	if(myGameArea.keys && myGameArea.keys[87] && !cooldown) {
+		player.dy = -4;
+		cooldown = true;
+	}
+	//all the player component update functions
+	player.newPos();
+	player.update();
+	player.damage();
+	player.lose();
+	//adds guns to the gun array when points are accumulated - SUBJECT TO CHANGE FOR BALANCING
+	if(points >= 1500 && !guns.includes(minigun)) {
+		guns.push(minigun);
+	}
+	if(points >= 3500 && !guns.includes(shotgun)) {
+		guns.push(shotgun);
+	}
+	if(points >= 6000 && !guns.includes(sniper)) {
+		guns.push(sniper);
+	}
+	if(points >= 9000 && !guns.includes(rpg)) {
+		guns.push(rpg);
+	}
+	if(points >= 9000 && !guns.includes(rpg)) {
+		guns.push(rpg);
+	}
+	//idea where guns get upgrades - for example, faster fire rate - MAYBE WORKING
+	if(points >= 11500 && guns[0] == 1) {
+		guns[0] = gundelay[0]/2;
+	}
+	//e and q to switch available guns
+	if(myGameArea.keys && myGameArea.keys[69] && switchdelay > 60) {
+		switchdelay = 0;
+		if(guns.length == 1) {
+		} else if(a + 1 >= guns.length) {
+			a = 0;
+			delay == 400;
+		} else {
+			a++;
+			delay == 400;
+		}
+	}
+	if(myGameArea.keys && myGameArea.keys[81] && switchdelay > 60) {
+		switchdelay = 0;
+		if(guns.length == 1) {
+		} else if(a - 1 < 0) {
+			a = guns.length - 1;
+			delay == 400;
+		} else {
+			a--;
+			delay== 400;
+		}
+	}
+	//gun update functions
+	guns[a].newPos();
+	guns[a].update();
+	//mob spawning curve - first 5000 points spawn up to 25, next 6000 up to 37-ish - in array
+	if(points <= 5000) {
+		if(mobs.length < Math.floor(points/200) + 1) {
+			mobs.push(new componentMob(80, 150, 450 + 510 * (Math.round(Math.random()) * 2 - 1), 200, Math.random() / 2 + 0.1, 0, "rgba(0,0,0,0)", 80, 50, zombieimg))
+		}
+	} else if(points <= 11000) {
+		if(mobs.length < Math.round((points-5000)/500) + 26) {
+			mobs.push(new componentMob(80, 150, 450 + 510 * (Math.round(Math.random()) * 2 - 1), 200, Math.random() / 2, 0, "rgba(0,0,0,0)", 80, 50, zombieimg))
+			//sometimes bigger mobs will spawn with more hp and dmg - 1/5 chance
+			if(Math.random() >= 0.80) {
+				mobs.push(new componentMob(120, 225, 450 + 510 * (Math.round(Math.random()) * 2 - 1), 200, Math.random() / 3, 0, "rgba(0,0,0,0)", 160, 100, zombieimg))
+			}
+		}
+	} else {
+		if(mobs.length < 39) {
+			mobs.push(new componentMob(80, 150, 450 + 510 * (Math.round(Math.random()) * 2 - 1), 200, Math.random() / 2, 0, "rgba(0,0,0,0)", 80, 50, zombieimg))
+			if(Math.random() >= 0.80) {
+				mobs.push(new componentMob(120, 225, 450 + 510 * (Math.round(Math.random()) * 2 - 1), 200, Math.random() / 3, 0, "rgba(0,0,0,0)", 160, 100, zombieimg))
+			}
+			if(Math.random() >= 0.90) {
+				mobs.push(new componentMob(160, 300, 450 + 510 * (Math.round(Math.random()) * 2 - 1), 200, Math.random() / 4, 0, "rgba(0,0,0,0)", 240, 150, zombieimg))
+			}
+		}
+	}
+	//updates all the bullet functions for every bullet in the array
+	for(i = 0; i < bullets.length; i++) {
+		if(bullets[i].x > 960 || bullets[i].x + bullets[i].width < 0) {
+			bullets[i].hp--;
+		}
+		bullets[i].newPos();
+		bullets[i].update();
+		bullets[i].del(i);
+	}
+	//updates all the enemy functions for each enemy in array
+	for(j = 0; j < mobs.length; j++) {
+		if (mobs[j].y + mobs[j].height < 420) {
+			mobs[j].dy = Math.round(10 * (mobs[j].dy + 0.1)) / 10;
+		} else {
+			mobs[j].dy = 0;
+		}
+		mobs[j].newPos();
+		mobs[j].update();
+		mobs[j].hit();
+		mobs[j].del(j);
+	}
+	//space to fire gun - creates bullets in array - each gun has own properties
+	if(myGameArea.keys && myGameArea.keys[32]) {
+		//pistol fires moderately slow, bullet is medium fast and does ok damage, minigun has random y speeds, shotgun fires 5, etc.
+		if(a == 0 && delay > 40 * gundelay[0]) {
+			delay = 0;
+			bullets.push(new componentBullet(5, 5, player.x + player.width/2 + pistol.width * direction, pistol.y + 2, 6 * direction, 0, 40, "orange"));
+		} else if(a == 1 && delay > 5 * gundelay[1]) {
+			delay = 0;
+			bullets.push(new componentBullet(5, 5, player.x + player.width/2 + minigun.width * direction - 20 * direction, minigun.y + 18, 5 * direction, Math.random()*1 - 0.5, 10, "orange"));
+		} else if(a == 2 && delay > 100 * gundelay[2]) {
+			delay = 0;
+			bullets.push(new componentBullet(7, 7, player.x + player.width/2 + shotgun.width * direction - 20 * direction, shotgun.y + 2, 5 * direction, -2, 80, "orange"));
+			bullets.push(new componentBullet(7, 7, player.x + player.width/2 + shotgun.width * direction - 20 * direction, shotgun.y + 2, 5 * direction, -1, 80, "orange"));
+			bullets.push(new componentBullet(7, 7, player.x + player.width/2 + shotgun.width * direction - 20 * direction, shotgun.y + 2, 5 * direction, 0, 80, "orange"));
+			bullets.push(new componentBullet(7, 7, player.x + player.width/2 + shotgun.width * direction - 20 * direction, shotgun.y + 2, 5 * direction, 1, 80, "orange"));
+			bullets.push(new componentBullet(7, 7, player.x + player.width/2 + shotgun.width * direction - 20 * direction, shotgun.y + 2, 5 * direction, 2, 80, "orange"));
+		} else if (a == 3 && delay > 200 * gundelay[3]) {
+			delay = 0;
+			bullets.push(new componentBullet(4, 4, player.x + player.width/2 + sniper.width * direction - 50 * direction, sniper.y + 20, 40 * direction, 0, 1000, "orange"))
+		} else if (a == 4 && delay > 400 * gundelay[4]) {
+			delay = 0;
+			bullets.push(new componentBullet(20, 20, player.x + player.width/2 + rpg.width * direction - 10 * direction, rpg.y + 4, 5 * direction, 0, 2000, "orange"))
+		}
+	}
+	//drawSprite(heartimg, 186, 500, 60, 60);
+	drawSprite(heartimg, 20, 20, 60, 60);
+	ctx = myGameArea.context;
+	ctx.fillStyle = "red";
+	ctx.fillRect(100, 30, 508, 40);
+	ctx.fillStyle = "#39FF14";
+	ctx.fillRect(104, 34, player.hp/2, 32);
+	drawText("Points: " + points, "40px Kanit", "white", 40, 120);
+	ctx.fillStyle = "white";
+	ctx.fillRect(180, 540, 600, 120);
+	if(a == 0) {
+		ctx.fillStyle = "rgba(57,255,20)";
+		ctx.fillRect(184, 544, 112, 112);
+		drawSprite(pistolimg, 214, 580, 60, 45);
+	} else {
+		ctx.fillStyle = "rgba(200,200,200,0.8)";
+		ctx.fillRect(184, 544, 112, 112);
+		drawSprite(pistolimg, 214, 580, 60, 45);
+	}
+
+	if(!guns.includes(minigun)) {
+		drawSprite(minigunimg, 310, 584, 100, 27)
+		ctx.fillStyle = "rgba(60,60,60,0.6)"
+		ctx.fillRect(304, 544, 112, 112)
+		drawText("1500", "30px Kanit", "red", 328, 575);
+	} else {
+		if(a == 1) {
+			ctx.fillStyle = "rgba(57,255,20)";
+			ctx.fillRect(304, 544, 112, 112);
+			drawSprite(minigunimg, 310, 584, 100, 27);
+		} else {
+			ctx.fillStyle = "rgba(200,200,200,0.8)";
+			ctx.fillRect(304, 544, 112, 112);
+			drawSprite(minigunimg, 310, 584, 100, 27);
+		}
+	}
+
+	if(!guns.includes(shotgun)) {
+		drawSprite(shotgunimg, 430, 584, 100, 27)
+		ctx.fillStyle = "rgba(60,60,60,0.6)"
+		ctx.fillRect(424, 544, 112, 112);
+		drawText("3500", "30px Kanit", "red", 444, 575);
+	} else {
+		if(a == 2) {
+			ctx.fillStyle = "rgba(57,255,20)";
+			ctx.fillRect(424, 544, 112, 112);
+			drawSprite(shotgunimg, 430, 584, 100, 27);
+		} else {
+			ctx.fillStyle = "rgba(200,200,200,0.8)";
+			ctx.fillRect(424, 544, 112, 112);
+			drawSprite(shotgunimg, 430, 584, 100, 27);
+		}
+	}
+
+	if(!guns.includes(sniper)) {
+		drawSprite(sniperimg, 546, 580, 108, 33)
+		ctx.fillStyle = "rgba(60,60,60,0.6)"
+		ctx.fillRect(544, 544, 112, 112)
+		drawText("6000", "30px Kanit", "red", 562, 575);
+	} else {
+		if(a == 3) {
+			ctx.fillStyle = "rgba(57,255,20)";
+			ctx.fillRect(544, 544, 112, 112);
+			drawSprite(sniperimg, 546, 580, 108, 33);
+		} else {
+			ctx.fillStyle = "rgba(200,200,200,0.8)";
+			ctx.fillRect(544, 544, 112, 112);
+			drawSprite(sniperimg, 546, 580, 108, 33);
+		}
+	}
+
+	if(!guns.includes(rpg)) {
+		drawSprite(rpgimg, 670, 590, 100, 30)
+		ctx.fillStyle = "rgba(60,60,60,0.6)"
+		ctx.fillRect(664, 544, 112, 112)
+		drawText("9000", "30px Kanit", "red", 680, 575);
+	} else {
+		if(a == 4) {
+			ctx.fillStyle = "rgba(57,255,20)";
+			ctx.fillRect(664, 544, 112, 112);
+			drawSprite(rpgimg, 670, 590, 100, 30);
+		} else {
+			ctx.fillStyle = "rgba(200,200,200,0.8)";
+			ctx.fillRect(664, 544, 112, 112);
+			drawSprite(rpgimg, 670, 590, 100, 30);
+		}
+	}
+}
+</script>
+<!--Basic html, canvas div, point div (temporary), instruction p (temporary)-->
+<center>
+<div id="cv">
+</div>
+<p>a = left, d = right, w = jump</p>
+<p>space = fire, e = switch weapons</p>
+</body>

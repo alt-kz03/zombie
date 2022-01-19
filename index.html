@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Summative Game Page 1</title>
+    <!-- Below: Linking the html to the css-->
+    <link href="style.css" rel="stylesheet" type="text/css" >
+  </head>
+  <body>
+    <!-- Below: Linking the html to the js-->
+    <script src="script.js"></script>
+      <table align="center" id="table">
+        <tr height="200px">
+          <td align="center" colspan="4"><h1 id="title">Rooftop Combat</h1></td>
+        </tr>
+        <tr valign="top" height="120px" id="buttons">
+          <td align="center"><button onClick="startGame()" id="mainbutton">Start Game</button></td>
+          <td align="center"><button onClick="rules()" id="button2">Rules</button></td>
+          <td align="center"><button onClick="credits()" id="button3">Credits</button></td>
+          <td align="center"><button onClick="more()" id="button4">More</button></td>
+        </tr>
+        <tr>
+          <td align="center" colspan="4"><p id="text"></p></td>
+        </tr>
+        <tr>
+          <td colspan="2" width="50%" align="center"><img id="img" src="images/pirate sprite.png" height="25%"></td>
+          <td colspan="2" width="50%" align="center"><img id="img2" src="images/zombies.png" height="25%" align="center"></td>
+        <tr height="0px">
+        </tr>
+<!-- The table below is what turns into the second page of the program -->
+      <table id="ename" width="960px" align="center">
+      </table>
+  </body>
+</html>
